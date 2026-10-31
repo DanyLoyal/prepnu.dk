@@ -1,8 +1,13 @@
+import "dotenv/config";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient, type MarkupType, type RoundingRule } from "../src/generated/prisma/client";
 import { computeSellingPriceOre } from "../src/lib/pricing/markup";
+import { getSslConfig } from "../src/lib/db-ssl";
 
-const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
+const adapter = new PrismaPg({
+  connectionString: process.env.DATABASE_URL,
+  ssl: getSslConfig(),
+});
 const prisma = new PrismaClient({ adapter });
 
 interface SeedProduct {
