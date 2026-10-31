@@ -1,0 +1,265 @@
+// Beredskab — datamodel
+// Se C:\Users\techn\.claude\plans\valiant-fluttering-gem.md for arkitekturbeslutninger.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum SupplierType {
+  MANUAL
+  BIGBUY
+  CJ_DROPSHIPPING
+  AMAZON_AFFILIATE
+}
+
+enum SupplierStatus {
+  ACTIVE
+  PAUSED
+  ERROR
+}
+
+enum ProductStatus {
+  DRAFT
+  PUBLISHED
+  PAUSED
+}
+
+enum MarkupType {
+  PERCENT
+  FIXED
+}
+
+enum RoundingRule {
+  NONE
+  NEAREST_WHOLE
+  NINETY_FIVE_OERE
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  REQUIRES_ACTION
+  REFUNDED
+  PARTIALLY_REFUNDED
+  CANCELLED
+}
+
+enum SupplierOrderStatus {
+  AFVENTER
+  BESTILT
+  AFSENDT
+  LEVERET
+  FEJLET
+  ANNULLERET
+}
+
+model Category {
+  id          String    @id @default(cuid())
+  slug        String    @unique
+  name        String
+  description String?
+  sortOrder   Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  products    Product[]
+
+  @@index([sortOrder])
+}
+
+model Supplier {
+  id            String         @id @default(cuid())
+  type          SupplierType
+  name          String
+  status        SupplierStatus @default(ACTIVE)
+  apiBaseUrl    String?
+  lastSyncAt    DateTime?
+  lastErrorAt   DateTime?
+  lastErrorText String?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  products      Product[]
+  supplierOrders SupplierOrder[]
+}
+
+model ProductImage {
+  id        String   @id @default(cuid())
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  url       String
+  alt       String?
+  sortOrder Int      @default(0)
+
+  @@index([productId])
+}
+
+model Product {
+  id          String        @id @default(cuid())
+  slug        String        @unique
+  name        String
+  description String
+  specs       Json? // fritekst/struktureret specifikationsliste
+  weightGrams Int?
+  status      ProductStatus @default(DRAFT)
+
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id])
+
+  supplierId  String
+  supplier    Supplier @relation(fields: [supplierId], references: [id])
+  supplierSku String
+
+  // Prissætning — udsalgspris beregnes altid server-side, aldrig fra klient
+  costPriceOre    Int // kostpris i øre (DKK), ekskl. moms
+  markupType      MarkupType   @default(PERCENT)
+  markupValue     Decimal      @db.Decimal(10, 2)
+  roundingRule    RoundingRule @default(NINETY_FIVE_OERE)
+  sellingPriceOre Int // cachet/afledt udsalgspris i øre inkl. moms
+
+  stock Int @default(0)
+
+  requiresAgeCheck Boolean @default(false)
+
+  // Compliance (GPSR/CE/fødevarer) — skal udfyldes før status kan sættes til PUBLISHED
+  ceMarked           Boolean?
+  manufacturer       String?
+  gpsrResponsible    String?
+  safetyWarnings     String?
+  foodIngredients     String?
+  foodAllergens      String?
+  foodShelfLife      String?
+  complianceOk       Boolean @default(false)
+
+  affiliateUrl String? // kun relevant for AMAZON_AFFILIATE-leverandør
+
+  images     ProductImage[]
+  orderLines OrderLine[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([categoryId])
+  @@index([supplierId])
+  @@index([status])
+}
+
+model ShippingRate {
+  id                  String   @id @default(cuid())
+  carrier             String // GLS, PostNord, DAO
+  name                String
+  priceOre            Int
+  freeShippingOverOre Int?
+  minWeightGrams      Int?
+  maxWeightGrams      Int?
+  sortOrder           Int      @default(0)
+  active              Boolean  @default(true)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+}
+
+model StoreSettings {
+  id                     String  @id @default("default")
+  shopName               String  @default("Beredskab")
+  cvr                    String?
+  address                String?
+  contactEmail           String?
+  freeShippingOverOre    Int?
+  defaultMarkupType      MarkupType @default(PERCENT)
+  defaultMarkupValue     Decimal @db.Decimal(10, 2) @default(30)
+  minimumMarginPercent   Decimal @db.Decimal(10, 2) @default(10)
+  updatedAt              DateTime @updatedAt
+}
+
+model CalculatorPreset {
+  id                 String   @id @default("default")
+  waterLitersPerDay  Decimal  @db.Decimal(10, 2) @default(3)
+  kcalPerDay         Int      @default(2000)
+  // kategori-slugs der matches til pakkelisten
+  heatCategorySlug   String?
+  lightCategorySlug  String?
+  waterCategorySlug  String?
+  foodCategorySlug   String?
+  firstAidCategorySlug String?
+  batteriesPerPersonPerWeek Int @default(2)
+  updatedAt          DateTime @updatedAt
+}
+
+model Order {
+  id                    String      @id @default(cuid())
+  stripeSessionId       String      @unique
+  stripePaymentIntentId String?
+  status                OrderStatus @default(PENDING)
+
+  customerEmail String
+  customerName  String
+  shippingAddressLine1 String
+  shippingAddressLine2 String?
+  shippingPostalCode   String
+  shippingCity         String
+  shippingCountry      String @default("DK")
+
+  subtotalOre  Int
+  shippingOre  Int
+  vatOre       Int
+  totalOre     Int
+
+  requiresAction Boolean @default(false)
+  ageVerified    Boolean @default(false)
+
+  orderLines     OrderLine[]
+  supplierOrders SupplierOrder[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+}
+
+model OrderLine {
+  id              String  @id @default(cuid())
+  orderId         String
+  order           Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId       String
+  product         Product @relation(fields: [productId], references: [id])
+  quantity        Int
+  unitPriceOre    Int // pris på købstidspunktet, uafhængig af senere prisændringer
+  supplierOrderId String?
+  supplierOrder   SupplierOrder? @relation(fields: [supplierOrderId], references: [id])
+
+  @@index([orderId])
+  @@index([productId])
+}
+
+model SupplierOrder {
+  id               String              @id @default(cuid())
+  orderId          String
+  order            Order               @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  supplierId       String
+  supplier         Supplier            @relation(fields: [supplierId], references: [id])
+  status           SupplierOrderStatus @default(AFVENTER)
+  supplierOrderRef String? // leverandørens eget ordrenummer
+  trackingNumber   String?
+  trackingUrl      String?
+  lastErrorText    String?
+
+  orderLines OrderLine[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([orderId])
+  @@index([supplierId])
+  @@index([status])
+}
+
+model WebhookEvent {
+  id            String   @id @default(cuid())
+  stripeEventId String   @unique
+  type          String
+  processedAt   DateTime @default(now())
+}
