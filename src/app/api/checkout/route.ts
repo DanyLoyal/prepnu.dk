@@ -84,6 +84,7 @@ export async function POST(request: Request) {
     mode: "payment",
     locale: "da",
     shipping_address_collection: { allowed_countries: ["DK"] },
+    phone_number_collection: { enabled: true },
     line_items: lineItems.map((item) => ({
       quantity: item.quantity,
       metadata: { productId: item.productId },

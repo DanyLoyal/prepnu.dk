@@ -3,6 +3,120 @@ import type Stripe from "stripe";
 import { stripe } from "@/lib/stripe";
 import { prisma } from "@/lib/prisma";
 import { VAT_RATE } from "@/lib/pricing/markup";
+import { getSupplierAdapter } from "@/lib/suppliers/registry";
+import type { OrderPayload } from "@/lib/suppliers/types";
+
+async function placeSupplierOrders(
+  orderId: string,
+  lineItems: Stripe.ApiList<Stripe.LineItem>,
+  shipping: OrderPayload["shipping"],
+) {
+  const alreadyPlaced = await prisma.supplierOrder.findFirst({ where: { orderId } });
+  if (alreadyPlaced) return;
+
+  const productIds = lineItems.data
+    .map((item) => item.metadata?.productId)
+    .filter((id): id is string => !!id);
+
+  const products = await prisma.product.findMany({
+    where: { id: { in: productIds } },
+    include: { supplier: true },
+  });
+  const productMap = new Map(products.map((p) => [p.id, p]));
+
+  const bySupplier = new Map<
+    string,
+    { supplierType: string; lines: { supplierSku: string; quantity: number }[] }
+  >();
+
+  for (const item of lineItems.data) {
+    const productId = item.metadata?.productId;
+    const product = productId ? productMap.get(productId) : undefined;
+    if (!product || !item.quantity) continue;
+
+    const group = bySupplier.get(product.supplierId) ?? {
+      supplierType: product.supplier.type,
+      lines: [],
+    };
+    group.lines.push({ supplierSku: product.supplierSku, quantity: item.quantity });
+    bySupplier.set(product.supplierId, group);
+  }
+
+  for (const [supplierId, group] of bySupplier) {
+    const supplierOrder = await prisma.supplierOrder.create({
+      data: { orderId, supplierId, status: "AFVENTER" },
+    });
+
+    try {
+      const adapter = getSupplierAdapter(group.supplierType);
+      const result = await adapter.placeOrder({
+        orderId,
+        lines: group.lines,
+        shipping,
+      });
+
+      // ManualAdapter opretter ikke en rigtig ekstern ordre — den skal blive i
+      // AFVENTER til en admin har bestilt hos leverandøren manuelt, jf. kommentar
+      // i manual-adapter.ts.
+      const status = group.supplierType === "MANUAL" ? "AFVENTER" : "BESTILT";
+
+      await prisma.supplierOrder.update({
+        where: { id: supplierOrder.id },
+        data: { status, supplierOrderRef: result.supplierOrderRef },
+      });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      await prisma.supplierOrder.update({
+        where: { id: supplierOrder.id },
+        data: { status: "FEJLET", lastErrorText: message },
+      });
+      await prisma.order.update({ where: { id: orderId }, data: { requiresAction: true } });
+      await prisma.supplier
+        .update({
+          where: { id: supplierId },
+          data: { lastErrorAt: new Date(), lastErrorText: message, status: "ERROR" },
+        })
+        .catch(() => {});
+    }
+  }
+}
+
+function extractCustomerAndShipping(session: Stripe.Checkout.Session) {
+  const customerEmail = session.customer_details?.email;
+  const customerName = session.customer_details?.name ?? session.collected_information?.shipping_details?.name;
+  const shippingAddress = session.collected_information?.shipping_details?.address;
+
+  if (!customerEmail || !customerName || !shippingAddress?.line1 || !shippingAddress.postal_code || !shippingAddress.city) {
+    throw new Error(`Checkout session ${session.id} mangler påkrævede kunde-/leveringsoplysninger`);
+  }
+
+  return {
+    customerEmail,
+    customerName,
+    shippingAddress,
+    shippingAddressLine1: shippingAddress.line1,
+    shippingPostalCode: shippingAddress.postal_code,
+    shippingCity: shippingAddress.city,
+    shippingCountry: shippingAddress.country ?? "DK",
+  };
+}
+
+async function fulfillPaidOrder(orderId: string, session: Stripe.Checkout.Session) {
+  const lineItems = await stripe.checkout.sessions.listLineItems(session.id, { limit: 100 });
+  const { customerEmail, customerName, shippingAddress, shippingAddressLine1, shippingPostalCode, shippingCity, shippingCountry } =
+    extractCustomerAndShipping(session);
+
+  await placeSupplierOrders(orderId, lineItems, {
+    name: customerName,
+    addressLine1: shippingAddressLine1,
+    addressLine2: shippingAddress.line2 ?? undefined,
+    postalCode: shippingPostalCode,
+    city: shippingCity,
+    country: shippingCountry,
+    phone: session.customer_details?.phone ?? undefined,
+    email: customerEmail,
+  });
+}
 
 async function createOrderFromSession(session: Stripe.Checkout.Session) {
   const existing = await prisma.order.findUnique({ where: { stripeSessionId: session.id } });
@@ -10,17 +124,15 @@ async function createOrderFromSession(session: Stripe.Checkout.Session) {
 
   const lineItems = await stripe.checkout.sessions.listLineItems(session.id, { limit: 100 });
 
-  const customerEmail = session.customer_details?.email;
-  const customerName = session.customer_details?.name ?? session.collected_information?.shipping_details?.name;
-  const shippingAddress = session.collected_information?.shipping_details?.address;
-
-  if (!customerEmail || !customerName || !shippingAddress?.line1 || !shippingAddress.postal_code || !shippingAddress.city) {
-    throw new Error(`Checkout session ${session.id} completed without required customer/shipping details`);
-  }
-
-  const shippingAddressLine1 = shippingAddress.line1;
-  const shippingPostalCode = shippingAddress.postal_code;
-  const shippingCity = shippingAddress.city;
+  const {
+    customerEmail,
+    customerName,
+    shippingAddress,
+    shippingAddressLine1,
+    shippingPostalCode,
+    shippingCity,
+    shippingCountry,
+  } = extractCustomerAndShipping(session);
 
   const shippingOre = session.shipping_cost?.amount_total ?? 0;
   const subtotalOre = lineItems.data.reduce(
@@ -31,8 +143,8 @@ async function createOrderFromSession(session: Stripe.Checkout.Session) {
   const totalOre = subtotalOre + shippingOre;
   const ageVerified = session.metadata?.ageVerified === "true";
 
-  await prisma.$transaction(async (tx) => {
-    const order = await tx.order.create({
+  const order = await prisma.$transaction(async (tx) => {
+    const createdOrder = await tx.order.create({
       data: {
         stripeSessionId: session.id,
         stripePaymentIntentId:
@@ -45,7 +157,7 @@ async function createOrderFromSession(session: Stripe.Checkout.Session) {
         shippingAddressLine2: shippingAddress.line2 ?? undefined,
         shippingPostalCode,
         shippingCity,
-        shippingCountry: shippingAddress.country ?? "DK",
+        shippingCountry,
         subtotalOre,
         shippingOre,
         vatOre,
@@ -60,7 +172,7 @@ async function createOrderFromSession(session: Stripe.Checkout.Session) {
 
       await tx.orderLine.create({
         data: {
-          orderId: order.id,
+          orderId: createdOrder.id,
           productId,
           quantity: item.quantity,
           unitPriceOre: item.price?.unit_amount ?? 0,
@@ -72,7 +184,15 @@ async function createOrderFromSession(session: Stripe.Checkout.Session) {
         data: { stock: { decrement: item.quantity } },
       });
     }
+
+    return createdOrder;
   });
+
+  // Leverandørbestilling sker uden for DB-transaktionen, da den involverer
+  // eksterne HTTP-kald der ikke bør holde en åben transaktion.
+  if (order.status === "PAID") {
+    await fulfillPaidOrder(order.id, session);
+  }
 }
 
 export async function POST(request: Request) {
@@ -109,10 +229,14 @@ export async function POST(request: Request) {
 
     case "checkout.session.async_payment_succeeded": {
       const session = event.data.object as Stripe.Checkout.Session;
-      await prisma.order.updateMany({
-        where: { stripeSessionId: session.id },
-        data: { status: "PAID", requiresAction: false },
-      });
+      const order = await prisma.order.findUnique({ where: { stripeSessionId: session.id } });
+      if (order) {
+        await prisma.order.update({
+          where: { id: order.id },
+          data: { status: "PAID", requiresAction: false },
+        });
+        await fulfillPaidOrder(order.id, session);
+      }
       break;
     }
 

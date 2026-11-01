@@ -22,6 +22,8 @@ export interface OrderPayload {
     postalCode: string;
     city: string;
     country: string;
+    phone?: string;
+    email?: string;
   };
 }
 
