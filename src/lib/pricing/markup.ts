@@ -1,6 +1,6 @@
 import type { MarkupType, RoundingRule } from "@/generated/prisma/client";
 
-const VAT_RATE = 0.25;
+export const VAT_RATE = 0.25;
 
 interface ComputeSellingPriceInput {
   costPriceOre: number;

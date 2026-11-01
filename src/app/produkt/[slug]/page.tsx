@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { getProductBySlug, getRelatedProducts } from "@/lib/catalog";
 import { formatDkk } from "@/lib/pricing/markup";
 import { ProductGrid } from "@/components/storefront/product-grid";
+import { AddToCartButton } from "@/components/storefront/add-to-cart-button";
 
 export const dynamic = "force-dynamic";
 
@@ -82,6 +83,8 @@ export default async function ProductPage({ params }: ProductPageProps) {
           >
             {inStock ? `På lager (${product.stock} stk)` : "Ikke på lager"}
           </p>
+
+          <AddToCartButton productId={product.id} inStock={inStock} />
 
           <p className="mt-6 text-stone-700">{product.description}</p>
 
