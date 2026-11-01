@@ -28,12 +28,15 @@ export function SiteHeader() {
           ))}
         </nav>
         <div className="flex items-center gap-4">
-          <Link
-            href="/soegning"
-            className="text-sm text-stone-200 transition hover:text-orange-400"
-          >
-            Søg
-          </Link>
+          <form action="/soegning" method="get" className="hidden sm:block">
+            <input
+              type="search"
+              name="q"
+              placeholder="Søg..."
+              aria-label="Søg i butikken"
+              className="w-40 rounded-md border border-olive-700 bg-olive-900 px-3 py-1.5 text-sm text-stone-50 placeholder:text-stone-400 focus:outline-none focus:ring-1 focus:ring-orange-400 lg:w-56"
+            />
+          </form>
           <Link
             href="/kurv"
             className="rounded-md bg-orange-500 px-4 py-2 text-sm font-semibold text-olive-950 transition hover:bg-orange-400"

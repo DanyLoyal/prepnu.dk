@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
+import { getCategoryBySlug, getFeaturedProducts, getProductsForCategory } from "@/lib/catalog";
+import { ProductGrid } from "@/components/storefront/product-grid";
 
 // Kategorier og lagerstatus skal altid være aktuelle — ingen statisk cache.
 export const dynamic = "force-dynamic";
@@ -8,6 +10,13 @@ export default async function HomePage() {
   const categories = await prisma.category.findMany({
     orderBy: { sortOrder: "asc" },
   });
+
+  const featuredProducts = await getFeaturedProducts(4);
+
+  const packagesCategory = await getCategoryBySlug("faerdige-beredskabspakker");
+  const packageProducts = packagesCategory
+    ? await getProductsForCategory(packagesCategory.id, {})
+    : [];
 
   return (
     <div>
@@ -76,6 +85,39 @@ export default async function HomePage() {
           ))}
         </div>
       </section>
+
+      <section className="mx-auto max-w-6xl px-4 py-14">
+        <h2 className="heading-font text-2xl font-semibold text-olive-950">
+          Bestsellere
+        </h2>
+        <div className="mt-6">
+          <ProductGrid products={featuredProducts} />
+        </div>
+      </section>
+
+      {packagesCategory ? (
+        <section className="bg-stone-100 py-14">
+          <div className="mx-auto max-w-6xl px-4">
+            <div className="flex items-baseline justify-between">
+              <h2 className="heading-font text-2xl font-semibold text-olive-950">
+                Færdige pakker
+              </h2>
+              <Link
+                href={`/kategori/${packagesCategory.slug}`}
+                className="text-sm font-semibold text-orange-600 hover:text-orange-500"
+              >
+                Se alle →
+              </Link>
+            </div>
+            <p className="mt-2 max-w-2xl text-stone-600">
+              {packagesCategory.description}
+            </p>
+            <div className="mt-6">
+              <ProductGrid products={packageProducts} />
+            </div>
+          </div>
+        </section>
+      ) : null}
     </div>
   );
 }
