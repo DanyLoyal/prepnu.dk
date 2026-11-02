@@ -65,7 +65,7 @@ const products: ImportProduct[] = [
     costPriceOre: usdToOre(5.15),
     stock: 1_607_030,
     supplierSku: "CJJZHWSD00051",
-    imageUrl: "https://cf.cjdropshipping.com/20200710/5060236584639.jpg",
+    imageUrl: "https://cf.cjdropshipping.com/20190926/1612577980946.jpg",
   },
   {
     categorySlug: "stroem",
@@ -89,7 +89,8 @@ const products: ImportProduct[] = [
     costPriceOre: usdToOre(25.87),
     stock: 28_292,
     supplierSku: "CJYD2072697",
-    imageUrl: "https://cf.cjdropshipping.com/quick/product/1ea36238-bf82-4f7d-a4b0-62e14f6595a8.jpg",
+    imageUrl:
+      "https://oss-cf.cjdropshipping.com/product/2024/07/01/06/c3a055ec-d2b1-4786-af69-1819727cef68.jpg",
   },
   {
     categorySlug: "vand",
@@ -101,7 +102,7 @@ const products: ImportProduct[] = [
     costPriceOre: usdToOre(4.78),
     stock: 46_582,
     supplierSku: "CJYD2051646",
-    imageUrl: "https://cf.cjdropshipping.com/quick/product/1ea36238-bf82-4f7d-a4b0-62e14f6595a8.jpg",
+    imageUrl: "https://cf.cjdropshipping.com/quick/product/00cc483e-d541-413c-953d-4debfccfdbea.jpg",
   },
   {
     categorySlug: "foerstehjaelp-og-sikkerhed",

@@ -6,9 +6,8 @@ const nextConfig: NextConfig = {
   // ved aggressiv statisk caching, og det forenkler render-modellen.
   images: {
     remotePatterns: [
-      // Kun seed/demo-billeder. Byt til den rigtige leverandør-billed-CDN
-      // når rigtige produktbilleder uploades i admin (Fase 4).
-      { protocol: "https", hostname: "placehold.co" },
+      { protocol: "https", hostname: "cf.cjdropshipping.com" },
+      { protocol: "https", hostname: "oss-cf.cjdropshipping.com" },
     ],
   },
   turbopack: {
