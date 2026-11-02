@@ -59,6 +59,6 @@ export function formatDkk(amountOre: number): string {
   return new Intl.NumberFormat("da-DK", {
     style: "currency",
     currency: "DKK",
-    minimumFractionDigits: 2,
+    minimumFractionDigits: amountOre % 100 === 0 ? 0 : 2,
   }).format(kroner);
 }

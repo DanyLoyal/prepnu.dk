@@ -59,7 +59,11 @@ describe("computeMarginPercent", () => {
 });
 
 describe("formatDkk", () => {
-  it("formatterer øre som dansk kroneformat", () => {
-    expect(formatDkk(129900)).toBe("1.299,00 kr.");
+  it("udelader decimaler for hele kronebeløb", () => {
+    expect(formatDkk(129900)).toBe("1.299 kr.");
+  });
+
+  it("viser decimaler når beløbet ikke er et helt kronebeløb", () => {
+    expect(formatDkk(129950)).toBe("1.299,50 kr.");
   });
 });

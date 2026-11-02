@@ -99,8 +99,8 @@ async function main() {
     const sellingPriceOre = computeSellingPriceOre({
       costPriceOre: p.costPriceOre,
       markupType: "PERCENT",
-      markupValue: 35,
-      roundingRule: "NINETY_FIVE_OERE",
+      markupValue: 45,
+      roundingRule: "NEAREST_WHOLE",
     });
 
     const product = await prisma.product.upsert({
@@ -117,8 +117,8 @@ async function main() {
         supplierSku: p.supplierSku,
         costPriceOre: p.costPriceOre,
         markupType: "PERCENT",
-        markupValue: 35,
-        roundingRule: "NINETY_FIVE_OERE",
+        markupValue: 45,
+        roundingRule: "NEAREST_WHOLE",
         sellingPriceOre,
         stock: p.stock,
         complianceOk: true,
