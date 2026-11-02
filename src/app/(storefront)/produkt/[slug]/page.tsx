@@ -6,6 +6,7 @@ import { getProductBySlug, getRelatedProducts } from "@/lib/catalog";
 import { formatDkk } from "@/lib/pricing/markup";
 import { ProductGrid } from "@/components/storefront/product-grid";
 import { AddToCartButton } from "@/components/storefront/add-to-cart-button";
+import { Badge } from "@/components/ui/badge";
 
 export const dynamic = "force-dynamic";
 
@@ -76,13 +77,11 @@ export default async function ProductPage({ params }: ProductPageProps) {
           </p>
           <p className="mt-1 text-sm text-stone-600">Pris inkl. 25% moms</p>
 
-          <p
-            className={`mt-4 inline-flex rounded px-3 py-1 text-sm font-semibold ${
-              inStock ? "bg-stone-100 text-olive-800" : "bg-stone-200 text-stone-600"
-            }`}
-          >
-            {inStock ? `På lager (${product.stock} stk)` : "Ikke på lager"}
-          </p>
+          <div className="mt-4">
+            <Badge tone={inStock ? "success" : "neutral"}>
+              {inStock ? `På lager (${product.stock} stk)` : "Ikke på lager"}
+            </Badge>
+          </div>
 
           <AddToCartButton productId={product.id} inStock={inStock} />
 

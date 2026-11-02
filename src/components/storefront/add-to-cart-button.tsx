@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { useCartStore } from "@/lib/cart/store";
+import { Button } from "@/components/ui/button";
+import { CheckIcon, CartIcon } from "@/components/icons";
 
 export function AddToCartButton({ productId, inStock }: { productId: string; inStock: boolean }) {
   const addItem = useCartStore((state) => state.addItem);
@@ -9,27 +11,34 @@ export function AddToCartButton({ productId, inStock }: { productId: string; inS
 
   if (!inStock) {
     return (
-      <button
-        type="button"
-        disabled
-        className="mt-6 w-full rounded bg-stone-200 px-6 py-3 font-semibold text-stone-500"
-      >
+      <Button type="button" disabled className="mt-6 w-full" size="lg">
         Ikke på lager
-      </button>
+      </Button>
     );
   }
 
   return (
-    <button
+    <Button
       type="button"
+      size="lg"
+      className="mt-6 w-full"
       onClick={() => {
         addItem(productId, 1);
         setAdded(true);
         setTimeout(() => setAdded(false), 1500);
       }}
-      className="mt-6 w-full rounded bg-orange-600 px-6 py-3 font-semibold text-white transition hover:bg-orange-700"
     >
-      {added ? "Lagt i kurv ✓" : "Læg i kurv"}
-    </button>
+      {added ? (
+        <>
+          <CheckIcon className="h-4 w-4" />
+          Lagt i kurv
+        </>
+      ) : (
+        <>
+          <CartIcon className="h-4 w-4" />
+          Læg i kurv
+        </>
+      )}
+    </Button>
   );
 }

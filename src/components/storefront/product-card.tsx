@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { formatDkk } from "@/lib/pricing/markup";
+import { Badge } from "@/components/ui/badge";
 import type { ProductCardData } from "@/lib/catalog";
 
 export function ProductCard({ product }: { product: ProductCardData }) {
@@ -10,7 +11,7 @@ export function ProductCard({ product }: { product: ProductCardData }) {
   return (
     <Link
       href={`/produkt/${product.slug}`}
-      className="group flex flex-col overflow-hidden rounded-lg border border-stone-200 bg-white transition hover:border-orange-400 hover:shadow-sm"
+      className="group flex flex-col overflow-hidden rounded-xl border border-stone-200 bg-white transition hover:-translate-y-0.5 hover:border-orange-300 hover:shadow-md"
     >
       <div className="relative aspect-square bg-stone-100">
         {image ? (
@@ -19,13 +20,13 @@ export function ProductCard({ product }: { product: ProductCardData }) {
             alt={image.alt ?? product.name}
             fill
             sizes="(min-width: 1024px) 25vw, 50vw"
-            className="object-cover"
+            className="object-cover transition duration-300 group-hover:scale-[1.03]"
           />
         ) : null}
         {!inStock ? (
-          <span className="absolute left-2 top-2 rounded bg-olive-900 px-2 py-1 text-xs font-semibold text-stone-50">
-            Udsolgt
-          </span>
+          <div className="absolute left-2 top-2">
+            <Badge tone="dark">Udsolgt</Badge>
+          </div>
         ) : null}
       </div>
       <div className="flex flex-1 flex-col gap-1 p-4">
@@ -35,12 +36,16 @@ export function ProductCard({ product }: { product: ProductCardData }) {
         <h3 className="heading-font font-semibold text-olive-900 group-hover:text-orange-600">
           {product.name}
         </h3>
-        <p className="mt-auto pt-2 text-lg font-semibold text-olive-950">
-          {formatDkk(product.sellingPriceOre)}
-        </p>
-        <p className="text-xs text-stone-500">
-          {inStock ? "På lager" : "Ikke på lager"}
-        </p>
+        <div className="mt-auto flex items-center justify-between pt-2">
+          <p className="text-lg font-semibold text-olive-950">
+            {formatDkk(product.sellingPriceOre)}
+          </p>
+          {inStock ? (
+            <span className="text-xs font-medium text-emerald-700">På lager</span>
+          ) : (
+            <span className="text-xs font-medium text-stone-400">Ikke på lager</span>
+          )}
+        </div>
       </div>
     </Link>
   );

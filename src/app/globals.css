@@ -1,19 +1,23 @@
 @import "tailwindcss";
 
 :root {
-  --color-olive-950: #10150f;
-  --color-olive-900: #1a2317;
-  --color-olive-800: #27331f;
-  --color-olive-700: #35432a;
-  --color-olive-600: #475838;
-  --color-olive-500: #5c7047;
-  --color-stone-50: #f7f5f0;
-  --color-stone-100: #efebe1;
-  --color-stone-200: #e2dccc;
-  --color-ink: #15170f;
+  --color-olive-950: #0f1410;
+  --color-olive-900: #19231a;
+  --color-olive-800: #253422;
+  --color-olive-700: #33462b;
+  --color-olive-600: #445c37;
+  --color-olive-500: #597248;
+  --color-olive-50: #f3f6f0;
+  --color-stone-50: #faf9f6;
+  --color-stone-100: #f1efe8;
+  --color-stone-200: #e4e0d4;
+  --color-stone-300: #cdc7b6;
+  --color-ink: #13160f;
+  --color-orange-700: #a84c18;
   --color-orange-600: #c85e1f;
   --color-orange-500: #e07a2e;
   --color-orange-400: #ea9550;
+  --color-orange-50: #fdf3ea;
 
   --background: var(--color-stone-50);
   --foreground: var(--color-ink);
@@ -29,12 +33,16 @@
   --color-olive-700: var(--color-olive-700);
   --color-olive-600: var(--color-olive-600);
   --color-olive-500: var(--color-olive-500);
+  --color-olive-50: var(--color-olive-50);
   --color-stone-50: var(--color-stone-50);
   --color-stone-100: var(--color-stone-100);
   --color-stone-200: var(--color-stone-200);
+  --color-stone-300: var(--color-stone-300);
+  --color-orange-700: var(--color-orange-700);
   --color-orange-600: var(--color-orange-600);
   --color-orange-500: var(--color-orange-500);
   --color-orange-400: var(--color-orange-400);
+  --color-orange-50: var(--color-orange-50);
 
   --font-sans: var(--font-body);
   --font-heading: var(--font-heading);
@@ -49,5 +57,13 @@ body {
   .heading-font {
     font-family: var(--font-heading);
     letter-spacing: 0.01em;
+  }
+
+  .bg-grid-fade {
+    background-image:
+      linear-gradient(to bottom, rgba(15, 20, 16, 0.92), rgba(15, 20, 16, 0.78)),
+      linear-gradient(rgba(255, 255, 255, 0.06) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.06) 1px, transparent 1px);
+    background-size: auto, 32px 32px, 32px 32px;
   }
 }

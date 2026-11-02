@@ -1,7 +1,5 @@
 import type { Metadata } from "next";
 import { Inter, Oswald } from "next/font/google";
-import { SiteHeader } from "@/components/storefront/site-header";
-import { SiteFooter } from "@/components/storefront/site-footer";
 import "./globals.css";
 
 const bodyFont = Inter({
@@ -31,11 +29,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="da"
       className={`${bodyFont.variable} ${headingFont.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-background text-foreground">
-        <SiteHeader />
-        <main className="flex-1">{children}</main>
-        <SiteFooter />
-      </body>
+      <body className="min-h-full bg-background text-foreground">{children}</body>
     </html>
   );
 }

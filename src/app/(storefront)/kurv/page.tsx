@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useCartStore } from "@/lib/cart/store";
 import { formatDkk } from "@/lib/pricing/markup";
+import { Button } from "@/components/ui/button";
 
 interface CartProduct {
   id: string;
@@ -148,14 +149,15 @@ export default function CartPage() {
 
           {error ? <p className="text-sm text-red-600">{error}</p> : null}
 
-          <button
+          <Button
             type="button"
+            size="lg"
+            className="w-full"
             disabled={submitting || (requiresAgeCheck && !ageVerified)}
             onClick={goToCheckout}
-            className="w-full rounded bg-orange-600 px-6 py-3 font-semibold text-white transition hover:bg-orange-700 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {submitting ? "Sender..." : "Gå til betaling"}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

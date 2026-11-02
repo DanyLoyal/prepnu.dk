@@ -16,7 +16,7 @@ export function ProductFilters({ action, hiddenFields, values }: ProductFiltersP
     <form
       action={action}
       method="get"
-      className="flex flex-wrap items-end gap-4 rounded-lg border border-stone-200 bg-white p-4"
+      className="flex flex-wrap items-end gap-4 rounded-xl border border-stone-200 bg-white p-4 shadow-[0_1px_2px_rgba(16,21,15,0.04)]"
     >
       {hiddenFields
         ? Object.entries(hiddenFields).map(([name, value]) => (
@@ -76,7 +76,7 @@ export function ProductFilters({ action, hiddenFields, values }: ProductFiltersP
 
       <button
         type="submit"
-        className="rounded-md bg-olive-900 px-4 py-2 text-sm font-semibold text-stone-50 transition hover:bg-olive-800"
+        className="rounded-md bg-olive-950 px-4 py-2 text-sm font-semibold text-stone-50 transition hover:bg-olive-800"
       >
         Filtrér
       </button>
