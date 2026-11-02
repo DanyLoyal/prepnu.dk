@@ -156,6 +156,12 @@ export class CJDropshippingAdapter implements SupplierAdapter {
           email: order.shipping.email,
           fromCountryCode: "CN",
           logisticName: "CJPacket",
+          // iossType=3: deklarér under CJ's eget IOSS-nummer. CJ opkræver et
+          // håndteringsgebyr for dette, men vi undgår selv at skulle have en
+          // EU-IOSS-registrering. Uden IOSS kan danske kunder risikere både
+          // dansk moms (allerede opkrævet ved Stripe-checkout) OG dansk told-
+          // moms ved levering — se beslutning i commit-besked.
+          iossType: 3,
           products: order.lines.map((line) => ({
             sku: line.supplierSku,
             quantity: line.quantity,
