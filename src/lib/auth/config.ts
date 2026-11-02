@@ -6,6 +6,10 @@ import bcrypt from "bcryptjs";
 // multi-admin/rolletabel i v1, så vi validerer direkte mod env-variabler i
 // stedet for et AdminUser-opslag i databasen.
 export const authConfig: NextAuthConfig = {
+  // Netlify (og alle andre ikke-Vercel-hosts) kræver dette — uden det kaster
+  // Auth.js en UntrustedHost-fejl ved signIn(), fordi det ikke automatisk kan
+  // stole på request-hostname som det gør på Vercel.
+  trustHost: true,
   pages: {
     signIn: "/admin/login",
   },
